@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Hello</h3>
+<p>ウォーリーを探せのためにメッセージを入れてください</p>
+<input id="target" type="text" placeholder="隠したいものを書いてください" maxlength="25">
+<input id="filed" type="text" placeholder="何を沢山生成しますか" maxlength="25">
+<button id="generateButton">実行</button>
+<div id="imageContainer"></div>
+<div id="loading" class="loading-cover" style="display: none;">
+  <div class="loading-content">ロード中...</div>
+</div>
+<script>
+var currentAnswerPoints = null;
+var target, filed;
+var loading = document.getElementById('loading');
+
+function showLoading() {
+  loading.style.display = 'block';
+  loading.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // 半透明の背景
+  document.body.style.overflow = 'hidden'; // スクロールを停止
+}
+
+function hideLoading() {
+  loading.style.display = 'none';
+  document.body.style.overflow = 'auto'; // スクロールを再開
+}
+
+
+document.getElementById('generateButton').addEventListener('click', function() {
+  // 入力値の取得
+  target = document.getElementById('target').value;
+  filed = document.getElementById('filed').value;
+
+  // ロード中の表示
+  showLoading(); // ロード中の表示
+
+  // 画像生成リクエスト
+  fetch('/generate-image', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ target: target, filed: filed })
+  })
+  .then(handleResponse)
+  .then(data => showImage(data.image_url))
+  .catch(handleError);
+});
+
+function handleResponse(response) {
+  if (!response.ok) {
+    return response.json().then(errorData => {
+      let errorMessage = errorData.error && errorData.error.message ?
+                         errorData.error.message :
+                         'ネットワーク応答が不正です。';
+      throw new Error(errorMessage);
+    });
+  }
+  return response.json();
+}
+
+function handleError(error) {
+  console.error('Error:', error);
+  alert(error.message);
+  if (loading && loading.style.display === 'block') {
+    hideLoading();
+  }
+}
+
+function showImage(imageUrl) {
+  var imageContainer = document.getElementById('imageContainer');
+  imageContainer.innerHTML = '<img src="' + imageUrl + '" class="generated-image"/>';
+
+  // 画像がロードされたら正解座標の取得リクエストを送信
+  var generatedImage = document.querySelector('.generated-image');
+  generatedImage.onload = function() {
+    fetchAnswerPoints(imageUrl);
+  };
+}
+
+function fetchAnswerPoints(imageUrl) {
+  fetch('/answer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ target: target, filed: filed, image_url: imageUrl })
+  })
+  .then(handleResponse)
+  .then(data => {
+    if (typeof data === 'string') {
+      hideLoading()
+      alert(data);
+    } else {
+      console.log(data);
+      currentAnswerPoints = data;
+      setupClickEvent();
+      hideLoading()
+    }
+  })
+  .catch(handleError);
+}
+
+function setupClickEvent() {
+  var generatedImage = document.querySelector('.generated-image');
+  generatedImage.addEventListener('click', function(event) {
+    answercreate(currentAnswerPoints, event);
+  });
+}
+
+
+  function answercreate(answerpoint, event) {
+  console.log(answerpoint);
+  var generatedImage = document.querySelector('.generated-image');
+  var rect = generatedImage.getBoundingClientRect();
+  var x = event.clientX - rect.left;
+  var y = event.clientY - rect.top;
+  console.log("Clicked at: x =", x, "y =", y);
+
+  if (x >= answerpoint[0]-100 && x <= answerpoint[2]+100 && y >= answerpoint[1]-100 && y <= answerpoint[3]+100) {
+    ok();
+  }
+}
+
+function ok() {
+  alert("正解です！");
+  console.log('Function OK has been triggered!');
+}
+
+</script>
+{% endblock %}
