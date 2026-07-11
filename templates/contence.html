@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
 <h3>Hello</h3>
-<p>ウォーリーを探せのためにメッセージを入れてください</p>
-<input id="target" type="text" placeholder="隠したいものを書いてください" maxlength="25">
-<input id="filed" type="text" placeholder="何を沢山生成しますか" maxlength="25">
-<button id="generateButton">実行</button>
+<p>Let's Play Wally</p>
+<input id="target" type="text" placeholder="Please specify what you want to hide." maxlength="50">
+<input id="filed" type="text" placeholder="Please specify what you want to generate a lot of." maxlength="50">
+<button id="generateButton">Exit</button>
 <div id="imageContainer"></div>
 <div id="loading" class="loading-cover" style="display: none;">
-  <div class="loading-content">ロード中...</div>
+  <div class="loading-content">Loading...</div>
 </div>
 <script>
 var currentAnswerPoints = null;
@@ -52,7 +52,7 @@ function handleResponse(response) {
     return response.json().then(errorData => {
       let errorMessage = errorData.error && errorData.error.message ?
                          errorData.error.message :
-                         'ネットワーク応答が不正です。';
+                         'The network response is invalid.';
       throw new Error(errorMessage);
     });
   }
@@ -123,7 +123,7 @@ function setupClickEvent() {
 }
 
 function ok() {
-  alert("正解です！");
+  alert("You got it!  ");
   console.log('Function OK has been triggered!');
 }
 
