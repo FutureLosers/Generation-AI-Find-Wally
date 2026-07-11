@@ -3,8 +3,7 @@ import requests
 from dotenv import load_dotenv
 import os
 import re
-from translate import Translator
-import inflection as i
+from clip_service import calculate_clip_similarity
 
 app = Flask(__name__)
 
@@ -19,6 +18,36 @@ def hello_world():
         "contence.html",
         title="Where’s Waldo?"
     )
+
+@app.route("/clip-score", methods=["POST"])
+def clip_score():
+
+    data = request.get_json(silent=True) or {}
+
+    target = data.get("target", "").strip()
+    filed = data.get("filed", "").strip()
+
+    if not target or not filed:
+        return jsonify({
+            "error": "targetとfiledの両方を入力してください。"
+        }), 400
+
+    try:
+        score = calculate_clip_similarity(
+            filed=filed,
+            target=target
+        )
+
+        return jsonify({
+            "score": round(score, 3)
+        })
+
+    except Exception as error:
+        print(f"CLIP error: {error}")
+
+        return jsonify({
+            "error": str(error)
+        }), 500
 
 
 @app.route("/generate-image", methods=["POST"])

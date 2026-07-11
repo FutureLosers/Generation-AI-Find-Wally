@@ -19,3 +19,47 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+.input-area {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.clip-score-box {
+    min-width: 130px;
+    padding: 12px;
+    border: 1px solid #999;
+    border-radius: 8px;
+    text-align: center;
+    background-color: #f5f5f5;
+}
+
+.clip-score-title {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+#clipScore {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.input-fields {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.input-fields input {
+    padding: 8px;
+}
+
+@media screen and (max-width: 700px) {
+    .input-area {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

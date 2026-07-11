@@ -2,9 +2,34 @@
 {% block content %}
 <h3>Hello</h3>
 <p>Let's Play Wally</p>
-<input id="target" type="text" placeholder="Please specify what you want to hide." maxlength="50">
-<input id="filed" type="text" placeholder="Please specify what you want to generate a lot of." maxlength="50">
-<button id="generateButton">Exit</button>
+<div class="input-area">
+
+  <div class="clip-score-box">
+    <div class="clip-score-title">CLIP Similarity</div>
+    <div id="clipScore">---</div>
+  </div>
+
+  <div class="input-fields">
+    <input
+      id="target"
+      type="text"
+      placeholder="what you want to hide"
+      maxlength="50"
+    >
+
+    <input
+      id="filed"
+      type="text"
+      placeholder="what you want to generate a lot of"
+      maxlength="50"
+    >
+
+    <button id="generateButton">
+      Exit
+    </button>
+  </div>
+
+</div>
 <div id="imageContainer"></div>
 <div id="loading" class="loading-cover" style="display: none;">
   <div class="loading-content">Loading...</div>
@@ -20,6 +45,50 @@ function showLoading() {
   document.body.style.overflow = 'hidden'; // スクロールを停止
 }
 
+function fetchClipScore() {
+  const targetValue = document.getElementById('target').value.trim();
+  const filedValue = document.getElementById('filed').value.trim();
+  const scoreElement = document.getElementById('clipScore');
+
+  if (!targetValue || !filedValue) {
+    scoreElement.textContent = '---';
+    return Promise.resolve(null);
+  }
+
+  scoreElement.textContent = '計算中';
+
+  return fetch('/clip-score', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      target: targetValue,
+      filed: filedValue
+    })
+  })
+  .then(handleResponse)
+  .then(data => {
+    scoreElement.textContent = data.score.toFixed(3);
+    return data.score;
+  })
+  .catch(error => {
+    console.error('CLIP Error:', error);
+    scoreElement.textContent = 'エラー';
+    throw error;
+  });
+}
+
+document.getElementById('target').addEventListener(
+  'change',
+  fetchClipScore
+);
+
+document.getElementById('filed').addEventListener(
+  'change',
+  fetchClipScore
+);
+
 function hideLoading() {
   loading.style.display = 'none';
   document.body.style.overflow = 'auto'; // スクロールを再開
@@ -27,24 +96,35 @@ function hideLoading() {
 
 
 document.getElementById('generateButton').addEventListener('click', function() {
-  // 入力値の取得
-  target = document.getElementById('target').value;
-  filed = document.getElementById('filed').value;
 
-  // ロード中の表示
-  showLoading(); // ロード中の表示
+  target = document.getElementById('target').value.trim();
+  filed = document.getElementById('filed').value.trim();
 
-  // 画像生成リクエスト
-  fetch('/generate-image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ target: target, filed: filed })
-  })
-  .then(handleResponse)
-  .then(data => showImage(data.image_url))
-  .catch(handleError);
+  if (!target || !filed) {
+    alert('探すものと、大量生成するものを入力してください。');
+    return;
+  }
+
+  showLoading();
+
+  fetchClipScore()
+    .then(() => {
+      return fetch('/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          target: target,
+          filed: filed
+        })
+      });
+    })
+    .then(handleResponse)
+    .then(data => {
+      showImage(data.image_url);
+    })
+    .catch(handleError);
 });
 
 function handleResponse(response) {
